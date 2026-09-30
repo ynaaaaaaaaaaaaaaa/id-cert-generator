@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Document Studio | ID & Certificate Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css?v=10" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">FMG PREMIUM SOLUTION</p>
+          <h1>ID &amp; Certificate Generator</h1>
+        </div>
+      </header>
+      <nav class="mode-tabs" aria-label="Document type">
+        <button class="mode-tab is-active" data-mode="id">ID Generator</button
+        ><button class="mode-tab" data-mode="certificate">
+          Certificate Generator
+        </button>
+      </nav>
+      <section class="workspace id-mode" id="workspace">
+        <section class="editor-panel">
+          <div class="panel-heading">
+            <span class="heading-icon">♙</span>
+            <div>
+              <h2 id="form-title">Employee ID details</h2>
+              <p id="form-subtitle">
+                Complete the fields to build a printable ID card.
+              </p>
+            </div>
+          </div>
+          <form id="id-form" class="form-content">
+            <div class="employee-table-wrap" role="region" aria-label="Employee ID details table" tabindex="0">
+              <table class="employee-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Select</th>
+                    <th scope="col">Employee photo</th>
+                    <th scope="col">Employee name *</th>
+                    <th scope="col">Job title</th>
+                    <th scope="col">Employee ID *</th>
+                    <th scope="col">Company address</th>
+                    <th scope="col">Emergency contact person</th>
+                    <th scope="col">Emergency contact number</th>
+                    <th scope="col">Return address</th>
+                    <th scope="col">Authorized person</th>
+                    <th scope="col">Row</th>
+                  </tr>
+                </thead>
+                <tbody id="employee-rows"></tbody>
+              </table>
+            </div>
+            <div class="id-table-toolbar">
+              <button class="button primary" type="button" id="generateButton">
+                Generate Selected IDs
+              </button>
+              <button class="button soft" type="button" id="generateAllButton">
+                Generate All IDs
+              </button>
+              <button class="button soft" type="button" id="addEmployeeButton">
+                + Add employee
+              </button>
+            </div>
+          </form>
+          <form id="certificate-form" class="form-content is-hidden">
+            <div class="field-grid">
+              <label class="span-two"
+                >Recipient name *<input
+                  id="certificateName"
+                  placeholder="Recipient Name" /></label
+              ><label class="span-two"
+                >Certificate title *<input
+                  id="certificateTitle"
+                  placeholder="Certificate of Achievement" /></label
+              ><label
+                >Presented by<input
+                  id="certificateIssuer"
+                  placeholder="Organization Name" /></label
+              ><label
+                >Date awarded<input id="certificateDate" type="date" /></label
+              ><label class="span-two"
+                >Recognition message<textarea
+                  id="certificateMessage"
+                  rows="3"
+                  placeholder="For outstanding achievement and dedication..."
+                ></textarea></label
+              ><label
+                >Authorized by<input
+                  id="certificateSigner"
+                  placeholder="Director Name" /></label
+              ><label
+                >Certificate number<input
+                  id="certificateNumber"
+                  placeholder="CERT-2026-001"
+              /></label>
+              <label
+                >Certificate background<input
+                  id="cardBackground"
+                  type="file"
+                  accept="image/*"
+              /></label>
+            </div>
+            <div class="bulk-panel">
+              <h3>Bulk generate certificates</h3>
+              <p>
+                One person per line: Name, Certificate title, Issuer, Date,
+                Message, Authorized by, Certificate number
+              </p>
+              <textarea
+                id="certificate-bulk-data"
+                rows="4"
+                placeholder="Alex Rivera, Certificate of Achievement, FMG, 2026-09-28, Excellent work, Director, CERT-001&#10;Jamie Cruz, Certificate of Appreciation, FMG, 2026-09-28, Dedicated service, Director, CERT-002"
+              ></textarea>
+              <button
+                class="button soft"
+                type="button"
+                id="bulk-certificate-button"
+              >
+                Generate All Certificates
+              </button>
+            </div>
+            <div class="button-row">
+              <button
+                class="button primary"
+                type="button"
+                id="certificateGenerate"
+              >
+                ✣ &nbsp;Generate certificate</button
+              ><button
+                class="button soft"
+                type="button"
+                id="saveCertificateBatchButton"
+              >
+                + &nbsp;Save to Batch</button
+              ><button class="button" type="reset" id="certificateReset">
+                ↻ &nbsp;Reset</button
+              ><button class="button" type="button" id="certificatePrint">
+                ▣ &nbsp;Print
+              </button>
+            </div>
+          </form>
+        </section>
+        <section class="preview-panel">
+          <div class="preview-heading">
+            <h2 id="preview-title">Live ID preview</h2>
+            <span class="live-pill">LIVE</span>
+          </div>
+          <div class="preview-stage" id="preview-stage">
+            <div class="id-card front-card" id="front-card">
+              <div class="card-brand">
+                <img
+                  id="company-logo-preview"
+                  class="has-logo"
+                  src="fmg logo.png"
+                  alt="FMG Premium Solution logo"
+                />
+              </div>
+              <div class="card-address" data-preview="companyAddress"></div>
+              <div class="photo-frame">
+                <div class="portrait-placeholder"></div>
+                <img id="employee-photo-preview" alt="Employee photo" />
+              </div>
+              <div class="employee-name" data-preview="employeeName"></div>
+              <div class="card-meta">
+                <span>ID No.: <b data-preview="employeeId"></b></span>
+              </div>
+              <div class="job-title" data-preview="jobTitle"></div>
+              <div class="signature-line employee-signature-line">
+                <span id="employee-signature-label">Employee Signature</span>
+                <img id="employee-signature-preview" alt="Employee signature" />
+              </div>
+            </div>
+            <div class="id-card back-card" id="back-card">
+              <img class="back-logo" src="backlogo.png" alt="Company logo" />
+              <div class="back-title">IN CASE OF EMERGENCY</div>
+              <div class="emergency-details">
+                Contact Person: <b data-preview="emergencyPerson">—</b
+                ><br />Contact Number: <b data-preview="emergencyNumber">—</b
+                ><br />Return Address: <b data-preview="returnAddress">—</b>
+              </div>
+              <p class="card-note">
+                This card is not transferable.<br />If found, please return
+                immediately to the organization.
+              </p>
+              <div id="employee-qr" class="employee-qr">
+                <img
+                  id="qr-image-preview"
+                  class="has-qr"
+                  src="qr.png"
+                  alt="FMG QR code"
+                />
+              </div>
+              <div class="signature-line Authorized-person-signature">
+                <img
+                  id="AuthorizedPerson-signature-preview"
+                  alt="Authorized person signature"
+                />
+              </div>
+              <div
+                class="Authorized-person-name"
+                data-preview="AuthorizedPersonName"
+              >
+                AUTHORIZED PERSON NAME
+              </div>
+              <small>Authorized Person</small>
+            </div>
+          </div>
+          <div class="preview-actions" id="preview-actions">
+            <button class="button soft" type="button" id="printPreviewButton">
+              ▣ Print
+            </button>
+            <button class="button soft" type="button" id="downloadPreviewButton">
+              ⇩ Save as PDF
+            </button>
+          </div>
+          <div id="id-batch-toolbar" class="batch-toolbar is-hidden">
+            <strong><span id="id-batch-count">0</span> <span id="id-batch-label">IDs in batch</span></strong>
+            <button class="button" type="button" id="printBatchButton">
+              ▣ Print
+            </button>
+            <button class="button soft" type="button" id="downloadBatchButton">
+              Save as PDF
+            </button>
+          </div>
+          <div id="id-bulk-output" class="bulk-output is-hidden"></div>
+          <div id="id-print-output" aria-hidden="true"></div>
+          <div class="certificate-preview is-hidden" id="certificate-preview">
+            <div class="certificate-paper">
+              <div class="certificate-mark">
+                <img
+                  id="certificate-logo-preview"
+                  src="fmg logo.png"
+                  alt="FMG company logo"
+                />
+              </div>
+              <h3 data-certificate="certificateTitle"></h3>
+              <p class="certificate-intro">
+                This certificate is proudly presented to
+              </p>
+              <div
+                class="certificate-recipient"
+                data-certificate="certificateName"
+              ></div>
+              <p
+                class="certificate-message"
+                data-certificate="certificateMessage"
+              ></p>
+              <div class="certificate-footer">
+                <span
+                  ><b data-certificate="certificateSigner"></b
+                  ><small>Authorized by</small></span
+                ><span
+                  ><b data-certificate="certificateDate"></b
+                  ><small>Date awarded</small></span
+                >
+              </div>
+            </div>
+          </div>
+          <div id="certificate-batch-toolbar" class="batch-toolbar is-hidden">
+            <strong
+              ><span id="certificate-batch-count">0</span> certificates in
+              batch</strong
+            >
+            <button
+              class="button"
+              type="button"
+              id="printCertificateBatchButton"
+            >
+              ▣ Print all
+            </button>
+            <button
+              class="button soft"
+              type="button"
+              id="downloadCertificateBatchButton"
+            >
+              ⇩ Download batch
+            </button>
+          </div>
+          <div id="certificate-bulk-output" class="bulk-output is-hidden"></div>
+        </section>
+      </section>
+    </main>
+    <script>
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => [...document.querySelectorAll(selector)];
+      const formatDate = (value) =>
+        value
+          ? new Date(value + "T00:00:00").toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "—";
+      let cardBackgroundUrl = "";
+      const updatePreview = (row = $("#employee-rows tr")) => {
+        if (!row) return;
+        $$("[data-preview]").forEach((element) => {
+          const value = row.querySelector(`[data-field="${element.dataset.preview}"]`)?.value.trim();
+          element.textContent = value || (element.classList.contains("employee-name") ? "EMPLOYEE NAME" : "—");
+        });
+        const photo = $("#employee-photo-preview");
+        photo.src = row.dataset.photoUrl || "";
+        photo.classList.toggle("has-photo", Boolean(row.dataset.photoUrl));
+        const employeeSignature = $("#employee-signature-preview");
+        employeeSignature.src = row.dataset.employeeSignatureUrl || "";
+        employeeSignature.classList.toggle("has-signature", Boolean(row.dataset.employeeSignatureUrl));
+        $("#employee-signature-label").classList.toggle("is-hidden", Boolean(row.dataset.employeeSignatureUrl));
+        const authorizedSignature = $("#AuthorizedPerson-signature-preview");
+        authorizedSignature.src = row.dataset.authorizedSignatureUrl || "";
+        authorizedSignature.classList.toggle("has-signature", Boolean(row.dataset.authorizedSignatureUrl));
+      };
+      const escapeHtml = (value) =>
+        value.replace(
+          /[&<>'"]/g,
+          (character) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            })[character],
+        );
+      const parseBulkRows = (value) =>
+        value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.split(",").map((cell) => cell.trim()));
+      const showBulkOutput = (outputId, regularIds) => {
+        regularIds.forEach((id) => $(id).classList.add("is-hidden"));
+        $(outputId).classList.remove("is-hidden");
+      };
+      const idBatch = [];
+      const renderIdBatch = () => {
+        $("#id-bulk-output").innerHTML = idBatch.join("");
+        $("#id-batch-count").textContent = idBatch.length;
+        $("#id-batch-label").textContent =
+          idBatch.length === 1 ? "ID in batch" : "IDs in batch";
+        $("#id-batch-toolbar").classList.toggle(
+          "is-hidden",
+          idBatch.length === 0,
+        );
+        if (idBatch.length) {
+          showBulkOutput("#id-bulk-output", ["#preview-stage"]);
+        } else {
+          $("#id-bulk-output").classList.add("is-hidden");
+          $("#preview-stage").classList.remove("is-hidden");
+        }
+        $("#preview-actions").classList.toggle(
+          "is-hidden",
+          idBatch.length > 0 || !$("#workspace").classList.contains("id-mode"),
+        );
+      };
+      const resetAssetPreviews = () => {
+        cardBackgroundUrl = "";
+        $("#employee-photo-preview").src = "";
+        $("#employee-photo-preview").classList.remove("has-photo");
+        $("#employee-signature-preview").src = "";
+        $("#employee-signature-preview").classList.remove("has-signature");
+        $("#employee-signature-label").classList.remove("is-hidden");
+        $("#AuthorizedPerson-signature-preview").src = "";
+        $("#AuthorizedPerson-signature-preview").classList.remove(
+          "has-signature",
+        );
+        $$(".certificate-paper").forEach((paper) => {
+          paper.style.backgroundImage = "";
+          paper.style.backgroundSize = "";
+          paper.style.backgroundPosition = "";
+        });
+      };
+      const certificateBatch = [];
+      const renderBulkCertificates = () => {
+        const rows = parseBulkRows($("#certificate-bulk-data").value);
+        rows.forEach(([name, title, issuer, date, message, signer, number]) => {
+          const certificate = document.createElement("div");
+          certificate.className = "certificate-paper bulk-certificate-paper";
+          certificate.innerHTML = `
+            <div class="certificate-mark"><img src="fmg logo.png" alt="FMG company logo" /></div>
+            <h3>${escapeHtml(title || "")}</h3>
+            <p class="certificate-intro">This certificate is proudly presented to</p>
+            <div class="certificate-recipient">${escapeHtml(name || "")}</div>
+            <p class="certificate-message">${escapeHtml(message || "")}</p>
+            <div class="certificate-footer"><span><b>${escapeHtml(signer || "")}</b><small>${escapeHtml(issuer || "Authorized by")}</small></span><span><b>${escapeHtml(date || "")}</b><small>${escapeHtml(number || "Certificate number")}</small></span></div>`;
+          const removeButton = document.createElement("button");
+          removeButton.className = "remove-batch-item";
+          removeButton.type = "button";
+          removeButton.title = "Remove from batch";
+          removeButton.setAttribute(
+            "aria-label",
+            "Remove certificate from batch",
+          );
+          removeButton.textContent = "×";
+          certificate.append(removeButton);
+          certificateBatch.push(certificate.outerHTML);
+        });
+        renderCertificateBatch();
+      };
+      const renderCertificateBatch = () => {
+        $("#certificate-bulk-output").innerHTML = certificateBatch.join("");
+        $("#certificate-batch-count").textContent = certificateBatch.length;
+        $("#certificate-batch-toolbar").classList.toggle(
+          "is-hidden",
+          certificateBatch.length === 0,
+        );
+        showBulkOutput("#certificate-bulk-output", ["#certificate-preview"]);
+      };
+      const saveCurrentCertificate = () => {
+        const certificate = $(
+          "#certificate-preview .certificate-paper",
+        ).cloneNode(true);
+        certificate.classList.add("bulk-certificate-paper");
+        const removeButton = document.createElement("button");
+        removeButton.className = "remove-batch-item";
+        removeButton.type = "button";
+        removeButton.title = "Remove from batch";
+        removeButton.setAttribute(
+          "aria-label",
+          "Remove certificate from batch",
+        );
+        removeButton.textContent = "×";
+        certificate.append(removeButton);
+        certificateBatch.push(certificate.outerHTML);
+        $("#certificate-form").reset();
+        $("#certificate-preview").classList.remove("is-hidden");
+        renderCertificateBatch();
+      };
+      const setMode = (mode) => {
+        const isCertificate = mode === "certificate";
+        $("#workspace").classList.toggle("id-mode", !isCertificate);
+        $$(".mode-tab").forEach((tab) =>
+          tab.classList.toggle("is-active", tab.dataset.mode === mode),
+        );
+        $("#id-form").classList.toggle("is-hidden", isCertificate);
+        $("#certificate-form").classList.toggle("is-hidden", !isCertificate);
+        $("#preview-stage").classList.toggle("is-hidden", isCertificate);
+        $("#certificate-preview").classList.toggle("is-hidden", !isCertificate);
+        $("#id-bulk-output").classList.toggle(
+          "is-hidden",
+          isCertificate || !$("#id-bulk-output").innerHTML,
+        );
+        $("#id-batch-toolbar").classList.toggle("is-hidden", isCertificate);
+        $("#preview-actions").classList.toggle(
+          "is-hidden",
+          isCertificate || idBatch.length > 0,
+        );
+        $("#certificate-bulk-output").classList.toggle(
+          "is-hidden",
+          !isCertificate || !$("#certificate-bulk-output").innerHTML,
+        );
+        $("#preview-title").textContent = isCertificate
+          ? "Live certificate preview"
+          : "Live ID preview";
+        $("#form-title").textContent = isCertificate
+          ? "Certificate details"
+          : "Employee ID details";
+        $("#form-subtitle").textContent = isCertificate
+          ? "Complete the fields to create a polished certificate."
+          : "Complete the fields to build a printable ID card.";
+      };
+      $$(".mode-tab").forEach((tab) =>
+        tab.addEventListener("click", () => setMode(tab.dataset.mode)),
+      );
+      const jobTitles = [
+        "President",
+        "VP/Finance",
+        "Project Manager",
+        "Technical Engineer",
+        "Electronics Engineer",
+        "CAD Operator",
+        "Cost Engineer",
+        "QA/QC",
+        "Safety Officer",
+        "Safety Officer 2",
+        "Electrical Supervisor",
+        "Electrician",
+        "Technician",
+        "Installer",
+        "Intern",
+        "Foreman",
+        "Leadman",
+        "Pipe Fitter",
+        "Pipe Welder",
+        "Welder",
+        "Helper",
+        "Helper – Electrical",
+        "Tech Support",
+        "HR/Admin",
+        "Accounting Assistant",
+        "Purchasing",
+        "Sales",
+        "Marketing",
+        "Logistics",
+        "Marketing & Logistics",
+        "Warehouse Man",
+        "Driver",
+        "PIC",
+      ];
+      const createEmployeeRow = () => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><input class="generate-checkbox" type="checkbox" data-generate-select checked aria-label="Select employee for ID generation"></td>
+          <td><img class="employee-thumb is-hidden" alt="Employee photo preview"><input type="file" accept="image/*" data-asset="photo" aria-label="Employee photo"></td>
+          <td><input data-field="employeeName" placeholder="Employee name" aria-label="Employee name"></td>
+          <td><select data-field="jobTitle" aria-label="Job title"><option value="" selected>Select role</option>${jobTitles.map((title) => `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`).join("")}</select></td>
+          <td><input data-field="employeeId" placeholder="Employee ID" aria-label="Employee ID"></td>
+          <td><input data-field="companyAddress" value="#648 Unit 11 &amp; 12, Quirino Highway, Brgy. Bagbag, Novaliches, Quezon City, Philippines, 1116" placeholder="Company address" aria-label="Company address"></td>
+          <td><input data-field="emergencyPerson" placeholder="Contact person" aria-label="Emergency contact person"></td>
+          <td><input data-field="emergencyNumber" placeholder="Contact number" aria-label="Emergency contact number"></td>
+          <td><input data-field="returnAddress" placeholder="Return address" aria-label="Return address"></td>
+          <td><input data-field="AuthorizedPersonName" value="Roderick T. Tuasy" placeholder="Authorized person" aria-label="Authorized person name"></td>
+          <td><button class="remove-employee" type="button" aria-label="Remove employee row" title="Remove row">×</button></td>`;
+        row.dataset.authorizedSignatureUrl = "authorized-signature.png";
+        return row;
+      };
+      $("#employee-rows").append(createEmployeeRow());
+      $("#addEmployeeButton").addEventListener("click", () =>
+        $("#employee-rows").append(createEmployeeRow()),
+      );
+      $("#employee-rows").addEventListener("input", (event) => {
+        const row = event.target.closest("tr");
+        if (row) updatePreview(row);
+      });
+      $("#employee-rows").addEventListener("focusin", (event) => {
+        const row = event.target.closest("tr");
+        if (row) updatePreview(row);
+      });
+      $("#employee-rows").addEventListener("change", (event) => {
+        const input = event.target;
+        const row = input.closest("tr");
+        if (!row || !input.dataset.asset || !input.files[0]) return;
+        const asset = input.dataset.asset;
+        const urlKey = `${asset}Url`;
+        if (row.dataset[urlKey]?.startsWith("blob:")) {
+          URL.revokeObjectURL(row.dataset[urlKey]);
+        }
+        row.dataset[urlKey] = URL.createObjectURL(input.files[0]);
+        if (asset === "photo") {
+          const thumbnail = row.querySelector(".employee-thumb");
+          thumbnail.src = row.dataset[urlKey];
+          thumbnail.classList.remove("is-hidden");
+        }
+        updatePreview(row);
+      });
+      $("#employee-rows").addEventListener("click", (event) => {
+        const removeButton = event.target.closest(".remove-employee");
+        if (!removeButton) return;
+        const row = removeButton.closest("tr");
+        Object.values(row.dataset).forEach((url) => {
+          if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+        });
+        row.remove();
+        if (!$("#employee-rows tr")) $("#employee-rows").append(createEmployeeRow());
+        updatePreview();
+      });
+      $("#cardBackground").addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          cardBackgroundUrl = URL.createObjectURL(file);
+          [".certificate-paper"].forEach((selector) => {
+            $(selector).style.backgroundImage = `url("${cardBackgroundUrl}")`;
+            $(selector).style.backgroundSize = "cover";
+            $(selector).style.backgroundPosition = "center";
+          });
+        }
+      });
+      $("#printPreviewButton").addEventListener("click", printPreviewWindow);
+      $("#downloadPreviewButton").addEventListener("click", exportCurrentPreviewToPdf);
+      $("#printBatchButton").addEventListener("click", printPreviewWindow);
+      $("#downloadBatchButton").addEventListener("click", exportCurrentPreviewToPdf);
+      $("#saveCertificateBatchButton").addEventListener(
+        "click",
+        saveCurrentCertificate,
+      );
+      $("#bulk-certificate-button").addEventListener(
+        "click",
+        renderBulkCertificates,
+      );
+      $("#printCertificateBatchButton").addEventListener("click", () =>
+        window.print(),
+      );
+      $("#downloadCertificateBatchButton").addEventListener("click", () => {
+        const batchHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Certificate batch</title><link rel="stylesheet" href="style.css"></head><body><main class="bulk-output">${certificateBatch.join("")}</main></body></html>`;
+        const link = document.createElement("a");
+        link.download = "certificate-batch.html";
+        link.href = URL.createObjectURL(
+          new Blob([batchHtml], { type: "text/html" }),
+        );
+        link.click();
+        URL.revokeObjectURL(link.href);
+      });
+      $("#id-bulk-output").addEventListener("click", (event) => {
+        const button = event.target.closest(".remove-batch-item");
+        if (!button) return;
+        const item = button.closest(".bulk-id-pair");
+        const index = [...$("#id-bulk-output").children].indexOf(item);
+        if (index >= 0) {
+          idBatch.splice(index, 1);
+          renderIdBatch();
+        }
+      });
+      $("#certificate-bulk-output").addEventListener("click", (event) => {
+        const button = event.target.closest(".remove-batch-item");
+        if (!button) return;
+        const item = button.closest(".bulk-certificate-paper");
+        const index = [...$("#certificate-bulk-output").children].indexOf(item);
+        if (index >= 0) {
+          certificateBatch.splice(index, 1);
+          renderCertificateBatch();
+        }
+      });
+      $$("#certificate-form input, #certificate-form textarea").forEach(
+        (input) =>
+          input.addEventListener("input", () => {
+            const target = $(`[data-certificate="${input.id}"]`);
+            if (target) target.textContent = input.value;
+          }),
+      );
+      $$('input[name="side"]').forEach((radio) =>
+        radio.addEventListener("change", () => {
+          $("#front-card").classList.toggle(
+            "is-dimmed",
+            radio.value === "back",
+          );
+          $("#back-card").classList.toggle(
+            "is-dimmed",
+            radio.value === "front",
+          );
+        }),
+      );
+      const generateIds = (selectedOnly) => {
+        const candidateRows = [...$("#employee-rows").rows].filter(
+          (row) =>
+            !selectedOnly || row.querySelector("[data-generate-select]").checked,
+        );
+        const rows = candidateRows.filter((row) =>
+          [...row.querySelectorAll("input:not([type=checkbox]), select")].some(
+            (input) =>
+              input.dataset.field === "companyAddress" ||
+              input.dataset.field === "AuthorizedPersonName"
+                ? false
+                : input.type === "file"
+                  ? input.files.length > 0
+                  : input.value.trim(),
+          ),
+        );
+        if (selectedOnly && !candidateRows.length) {
+          window.alert("Select at least one employee to generate an ID.");
+          return;
+        }
+        if (!rows.length) {
+          window.alert(
+            selectedOnly
+              ? "Enter employee details in a selected row before generating IDs."
+              : "Add employee details before generating IDs.",
+          );
+          return;
+        }
+        if (rows.some((row) => !row.querySelector('[data-field="employeeName"]').value.trim() || !row.querySelector('[data-field="employeeId"]').value.trim())) {
+          window.alert("Enter an employee name and ID number for every filled row.");
+          return;
+        }
+        rows.forEach((row) => {
+          updatePreview(row);
+          const pair = document.createElement("div");
+          pair.className = "bulk-id-pair";
+          ["#front-card", "#back-card"].forEach((selector) => {
+            const card = $(selector).cloneNode(true);
+            card.classList.add("bulk-id-card");
+            pair.append(card);
+          });
+          const removeButton = document.createElement("button");
+          removeButton.className = "remove-batch-item";
+          removeButton.type = "button";
+          removeButton.title = "Remove ID from batch";
+          removeButton.setAttribute("aria-label", "Remove ID from batch");
+          removeButton.textContent = "×";
+          pair.append(removeButton);
+          idBatch.push(pair.outerHTML);
+        });
+        renderIdBatch();
+        $(".preview-panel").animate(
+          [
+            { boxShadow: "0 0 0 rgba(19, 103, 73, 0)" },
+            { boxShadow: "0 0 0 5px rgba(19, 103, 73, .13)" },
+            { boxShadow: "0 0 0 rgba(19, 103, 73, 0)" },
+          ],
+          { duration: 600 },
+        );
+      };
+      const createEmployeePdfFilename = () => {
+        const employeeId = $(`[data-preview="employeeId"]`)?.textContent.trim();
+        const safeId = (employeeId || "Unknown")
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^_|_$/g, "") || "Unknown";
+        return `EmployeeID_${safeId}.pdf`;
+      };
+      const getIdCardPairs = () => {
+        const batchPairs = [...$("#id-bulk-output").querySelectorAll(".bulk-id-pair")];
+        if (batchPairs.length) {
+          return batchPairs.map((pair) => [...pair.querySelectorAll(":scope > .id-card")]);
+        }
+        const previewCards = [...$("#preview-stage").querySelectorAll(":scope > .id-card")];
+        return previewCards.length ? [previewCards] : [];
+      };
+      const downloadBlobAsPdf = (blob, filename) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.rel = "noopener";
+        link.style.position = "fixed";
+        link.style.left = "-10000px";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      };
+      const exportTargetToPdf = async (targets, filename) => {
+        const exportTargets = Array.isArray(targets) ? targets : [targets];
+        if (!exportTargets.length || !exportTargets[0]) {
+          window.alert("The preview is not available.");
+          return;
+        }
+        if (typeof html2canvas !== "function" || !window.jspdf?.jsPDF) {
+          window.alert("The PDF tools could not load. Check your internet connection and try again.");
+          return;
+        }
+
+        try {
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a4",
+          });
+
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const cardWidth = 85.6;
+          const cardHeight = 53.98;
+          const gap = 8;
+          const cardsPerPage = 3;
+          const leftMargin = (pageWidth - (cardWidth * cardsPerPage + gap * (cardsPerPage - 1))) / 2;
+          const topMargin = 18;
+
+          for (let index = 0; index < exportTargets.length; index += 1) {
+            const pageIndex = Math.floor(index / cardsPerPage);
+            const pageOffset = index % cardsPerPage;
+            if (index > 0 && index % cardsPerPage === 0) {
+              pdf.addPage();
+            }
+
+            const source = exportTargets[index];
+            const canvas = await html2canvas(source, {
+              backgroundColor: "#ffffff",
+              scale: 2,
+              logging: false,
+              useCORS: true,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: source.scrollWidth || source.offsetWidth || source.clientWidth,
+              windowHeight: source.scrollHeight || source.offsetHeight || source.clientHeight,
+              onclone: (clonedDocument) => {
+                clonedDocument.querySelectorAll(".remove-batch-item").forEach((button) => button.remove());
+              },
+            });
+
+            const scale = Math.min(cardWidth / canvas.width, cardHeight / canvas.height);
+            const drawWidth = canvas.width * scale;
+            const drawHeight = canvas.height * scale;
+            const x = leftMargin + pageOffset * (cardWidth + gap) + (cardWidth - drawWidth) / 2;
+            const y = topMargin + pageIndex * (cardHeight + 18) + (cardHeight - drawHeight) / 2;
+
+            pdf.addImage(
+              canvas.toDataURL("image/png"),
+              "PNG",
+              x,
+              y,
+              drawWidth,
+              drawHeight,
+              undefined,
+              "FAST",
+            );
+          }
+
+          downloadBlobAsPdf(pdf.output("blob"), filename);
+        } catch (error) {
+          console.error("PDF generation failed", error);
+          window.alert(`The PDF could not be generated: ${error.message || error}`);
+        }
+      };
+      const renderIdCardCanvas = async (source) => {
+        await document.fonts.ready;
+        return html2canvas(source, {
+          backgroundColor: null,
+          scale: 4,
+          logging: false,
+          useCORS: true,
+          allowTaint: false,
+          scrollX: 0,
+          scrollY: 0,
+        });
+      };
+      const getIdSheetMetrics = () => {
+        const millimeters = (name) =>
+          parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+        return {
+          cardWidth: millimeters("--id-card-width"),
+          cardHeight: millimeters("--id-card-height"),
+          pairGap: millimeters("--id-pair-gap"),
+          rowGap: millimeters("--id-row-gap"),
+          sheetWidth: millimeters("--id-sheet-width"),
+          sheetHeight: millimeters("--id-sheet-height"),
+        };
+      };
+      const getFittedCardFrame = (width, height, cardWidth, cardHeight) => {
+        const scale = Math.min(cardWidth / width, cardHeight / height);
+        return { width: width * scale, height: height * scale };
+      };
+      const exportIdPairsToPdf = async (pairs, filename) => {
+        if (!pairs.length || pairs.some((pair) => pair.length !== 2)) {
+          window.alert("The live ID preview is not available.");
+          return;
+        }
+        if (typeof html2canvas !== "function" || !window.jspdf?.jsPDF) {
+          window.alert("The PDF tools could not load. Check your internet connection and try again.");
+          return;
+        }
+
+        try {
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+            compress: true,
+            precision: 16,
+          });
+          const { cardWidth, cardHeight, pairGap, rowGap, sheetWidth, sheetHeight } =
+            getIdSheetMetrics();
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pairWidth = cardWidth * 2 + pairGap;
+          const left = (sheetWidth - pairWidth) / 2;
+          const top = (sheetHeight - cardHeight * 3 - rowGap * 2) / 2;
+          const sheetLeft = (pageWidth - sheetWidth) / 2;
+
+          for (let pairIndex = 0; pairIndex < pairs.length; pairIndex += 1) {
+            if (pairIndex > 0 && pairIndex % 3 === 0) pdf.addPage();
+            const row = pairIndex % 3;
+            const y = top + row * (cardHeight + rowGap);
+            for (let side = 0; side < 2; side += 1) {
+              const canvas = await renderIdCardCanvas(pairs[pairIndex][side]);
+              const frame = getFittedCardFrame(
+                canvas.width,
+                canvas.height,
+                cardWidth,
+                cardHeight,
+              );
+              const slotX = sheetLeft + left + side * (cardWidth + pairGap);
+              pdf.addImage(
+                canvas.toDataURL("image/png"),
+                "PNG",
+                slotX + (cardWidth - frame.width) / 2,
+                y + (cardHeight - frame.height) / 2,
+                frame.width,
+                frame.height,
+                undefined,
+                "FAST",
+              );
+              canvas.width = 0;
+              canvas.height = 0;
+            }
+
+            pdf.setDrawColor(115, 130, 125);
+            pdf.setLineWidth(0.15);
+            pdf.setLineDashPattern([0.8, 0.8], 0);
+            pdf.line(sheetLeft + left + cardWidth + pairGap / 2, y, sheetLeft + left + cardWidth + pairGap / 2, y + cardHeight);
+            if (row < 2 && pairIndex + 1 < pairs.length) {
+              pdf.line(sheetLeft + left, y + cardHeight + rowGap / 2, sheetLeft + left + pairWidth, y + cardHeight + rowGap / 2);
+            }
+            pdf.setLineDashPattern([], 0);
+          }
+
+          downloadBlobAsPdf(pdf.output("blob"), filename);
+        } catch (error) {
+          console.error("PDF generation failed", error);
+          window.alert(`The PDF could not be generated: ${error.message || error}`);
+        }
+      };
+      async function printPreviewWindow() {
+        const pairs = getIdCardPairs();
+        if (!pairs.length || pairs.some((pair) => pair.length !== 2)) {
+          window.alert("The live ID preview is not available.");
+          return;
+        }
+
+        const output = $("#id-print-output");
+        output.replaceChildren();
+        try {
+          for (let index = 0; index < pairs.length; index += 1) {
+            if (index % 3 === 0) {
+              const page = document.createElement("section");
+              page.className = "id-print-page";
+              output.append(page);
+            }
+            const page = output.lastElementChild;
+            const pair = document.createElement("div");
+            pair.className = "id-print-pair";
+            const { cardWidth, cardHeight } = getIdSheetMetrics();
+            for (const card of pairs[index]) {
+              const wrapper = document.createElement("div");
+              wrapper.className = "id-print-card-wrap";
+              const image = document.createElement("img");
+              image.className = "id-print-card-image";
+              image.alt = "";
+              image.style.objectFit = "contain";
+              const canvas = await renderIdCardCanvas(card);
+              const frame = getFittedCardFrame(
+                canvas.width,
+                canvas.height,
+                cardWidth,
+                cardHeight,
+              );
+              image.style.width = `${frame.width}mm`;
+              image.style.height = `${frame.height}mm`;
+              image.src = canvas.toDataURL("image/png");
+              canvas.width = 0;
+              canvas.height = 0;
+              wrapper.append(image);
+              pair.append(wrapper);
+            }
+            page.append(pair);
+          }
+          await Promise.all(
+            [...output.querySelectorAll("img")].map((image) => image.decode()),
+          );
+          document.body.append(output);
+          document.body.classList.add("id-print-mode");
+          window.print();
+        } catch (error) {
+          output.replaceChildren();
+          $("#certificate-preview").before(output);
+          window.alert(`The print layout could not be prepared: ${error.message || error}`);
+        }
+      }
+      window.addEventListener("afterprint", () => {
+        document.body.classList.remove("id-print-mode");
+        $("#id-print-output").replaceChildren();
+        $("#certificate-preview").before($("#id-print-output"));
+      });
+      async function exportCurrentPreviewToPdf() {
+        if (!$("#certificate-preview").classList.contains("is-hidden")) {
+          await exportTargetToPdf(
+            $("#certificate-preview .certificate-paper"),
+            "certificate.pdf",
+          );
+          return;
+        }
+        const pairs = getIdCardPairs();
+        const isBatch = $("#id-bulk-output").querySelector(".bulk-id-pair");
+        const filename = isBatch
+          ? "EmployeeIDs_Batch.pdf"
+          : createEmployeePdfFilename();
+        await exportIdPairsToPdf(pairs, filename);
+      }
+      $("#generateButton").addEventListener("click", () => generateIds(true));
+      $("#generateAllButton").addEventListener("click", () => generateIds(false));
+      $("#certificatePrint").addEventListener("click", () => window.print());
+      $("#certificateGenerate").addEventListener("click", () => {
+        $("#certificate-preview").classList.remove("is-hidden");
+        $("#certificate-bulk-output").classList.add("is-hidden");
+        $(".certificate-paper").animate(
+          [{ transform: "scale(.98)" }, { transform: "scale(1)" }],
+          { duration: 350 },
+        );
+      });
+      $("#certificateReset").addEventListener("click", () =>
+        setTimeout(() => {
+          $$("[data-certificate]").forEach((element) => {
+            element.textContent = "";
+          });
+          resetAssetPreviews();
+          $("#certificate-preview").classList.remove("is-hidden");
+          $("#certificate-bulk-output").classList.add("is-hidden");
+        }),
+      );
+      updatePreview();
+    </script>
+  </body>
+</html>
