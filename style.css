@@ -1043,6 +1043,47 @@ textarea {
   size: A4 portrait;
   margin: 0;
 }
+@page certificate-sheet {
+  size: A4 landscape;
+  margin: 8mm;
+}
+@media print {
+  /* Certificate mode: one certificate per landscape page, scaled to fill it. */
+  body:has(.workspace:not(.id-mode)) {
+    margin: 0;
+    page: certificate-sheet;
+  }
+  .workspace:not(.id-mode),
+  .workspace:not(.id-mode) .preview-panel,
+  .workspace:not(.id-mode) .certificate-preview,
+  .workspace:not(.id-mode) #certificate-bulk-output {
+    display: block;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .workspace:not(.id-mode) .certificate-paper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 560px;
+    height: 380px;
+    min-height: 0;
+    margin: 0 auto;
+    overflow: hidden;
+    box-shadow: none;
+    /* 560px x 1.89 fills the 281mm-wide printable area of A4 landscape. */
+    zoom: 1.89;
+    break-inside: avoid;
+    break-after: page;
+    page-break-after: always;
+  }
+  .workspace:not(.id-mode) .certificate-paper:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
 @media print {
   body.id-print-mode {
     width: 210mm !important;
