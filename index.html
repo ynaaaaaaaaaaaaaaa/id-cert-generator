@@ -189,13 +189,14 @@
             <div class="bulk-panel">
               <h3>Bulk generate certificates</h3>
               <p>
-                One person per line: Name, Certificate title, Issuer, Date,
-                Message, Authorized by, Certificate number
+                Paste recipient names, one per line. Everything else comes from
+                the details above. Certificate numbers count up from the one
+                entered (CERT-001, CERT-002, …).
               </p>
               <textarea
                 id="certificate-bulk-data"
-                rows="4"
-                placeholder="Alex Rivera, Certificate of Achievement, FMG, 2026-09-28, Excellent work, Director, CERT-001&#10;Jamie Cruz, Certificate of Appreciation, FMG, 2026-09-28, Dedicated service, Director, CERT-002"
+                rows="5"
+                placeholder="Alex Rivera&#10;Jamie Cruz&#10;Sam Dela Cruz"
               ></textarea>
               <button
                 class="button soft"
@@ -430,12 +431,6 @@
               '"': "&quot;",
             })[character],
         );
-      const parseBulkRows = (value) =>
-        value
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((line) => line.split(",").map((cell) => cell.trim()));
       const showBulkOutput = (outputId, regularIds) => {
         regularIds.forEach((id) => $(id).classList.add("is-hidden"));
         $(outputId).classList.remove("is-hidden");
@@ -645,27 +640,39 @@
           ),
         );
       };
-      const copyCertificateDesign = (certificate) => {
-        backgroundStyleProperties.forEach((property) => {
-          certificate.style[property] = certificatePaper.style[property];
-        });
-        applyTextStyles(certificate);
-      };
       const certificateBatch = [];
+      const getSequentialNumber = (start, index) => {
+        const match = start.match(/^(.*?)(\d+)(\D*)$/);
+        if (!match) return index ? `${start}-${index + 1}` : start;
+        const [, prefix, digits, suffix] = match;
+        const next = (BigInt(digits) + BigInt(index))
+          .toString()
+          .padStart(digits.length, "0");
+        return `${prefix}${next}${suffix}`;
+      };
       const renderBulkCertificates = () => {
-        const rows = parseBulkRows($("#certificate-bulk-data").value);
-        rows.forEach(([name, title, issuer, date, message, signer, number]) => {
-          const certificate = document.createElement("div");
-          certificate.className = "certificate-paper bulk-certificate-paper";
-          certificate.innerHTML = `
-            <div class="certificate-mark"><img src="fmg logo.png" alt="FMG company logo" /></div>
-            <h3 data-format="certificateTitle">${escapeHtml(title || "")}</h3>
-            <p class="certificate-intro">This certificate is proudly presented to</p>
-            <div class="certificate-recipient" data-format="certificateName">${escapeHtml(name || "")}</div>
-            <p class="certificate-message" data-format="certificateMessage">${escapeHtml(message || "")}</p>
-            <div class="certificate-footer">${issuer ? `<span><b data-format="certificateIssuer">${escapeHtml(issuer)}</b><small>Presented by</small></span>` : ""}<span><b data-format="certificateSigner">${escapeHtml(signer || "")}</b><small>Authorized by</small></span><span><b data-format="certificateDate">${escapeHtml(date || "")}</b><small>Date awarded</small></span></div>
-            ${number ? `<p class="certificate-number" data-format="certificateNumber">Certificate No. ${escapeHtml(number)}</p>` : ""}`;
-          copyCertificateDesign(certificate);
+        const names = $("#certificate-bulk-data")
+          .value.split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean);
+        if (!names.length) {
+          window.alert("Paste at least one recipient name, one per line.");
+          return;
+        }
+        const startNumber = $("#certificateNumber").value.trim();
+        names.forEach((name, index) => {
+          // Copy the live certificate so text, formatting and background match it.
+          const certificate = certificatePaper.cloneNode(true);
+          certificate.classList.add("bulk-certificate-paper");
+          certificate.classList.remove("has-background", "is-dragging");
+          certificate.querySelector(
+            '[data-certificate="certificateName"]',
+          ).textContent = name;
+          if (startNumber) {
+            certificate.querySelector(
+              '[data-certificate="certificateNumber"]',
+            ).textContent = getSequentialNumber(startNumber, index);
+          }
           const removeButton = document.createElement("button");
           removeButton.className = "remove-batch-item";
           removeButton.type = "button";

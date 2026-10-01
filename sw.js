@@ -1,5 +1,5 @@
 // Bump this when app files change so installed copies drop the old cache.
-const CACHE_NAME = "id-cert-generator-v1";
+const CACHE_NAME = "id-cert-generator-v2";
 const APP_FILES = [
   "./",
   "index.html",
