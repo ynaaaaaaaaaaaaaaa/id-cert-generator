@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#146443" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
-    <link rel="stylesheet" href="style.css?v=14" />
+    <link rel="stylesheet" href="style.css?v=17" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   </head>
@@ -54,7 +54,6 @@
               <table class="employee-table">
                 <thead>
                   <tr>
-                    <th scope="col">Select</th>
                     <th scope="col">Employee photo</th>
                     <th scope="col">Employee name *</th>
                     <th scope="col">Job title</th>
@@ -72,10 +71,7 @@
             </div>
             <div class="id-table-toolbar">
               <button class="button primary" type="button" id="generateButton">
-                Generate Selected IDs
-              </button>
-              <button class="button soft" type="button" id="generateAllButton">
-                Generate All IDs
+                Generate IDs
               </button>
               <button class="button soft" type="button" id="addEmployeeButton">
                 + Add employee
@@ -201,8 +197,9 @@
             <div class="bulk-panel">
               <h3>Bulk generate certificates</h3>
               <p>
-                Paste recipient names, one per line. Everything else comes from
-                the details above. Certificate numbers count up from the one
+                Paste recipient names, one per line. The recipient name above
+                is included first, and everything else comes from the details
+                above. Certificate numbers count up from the one
                 entered (CERT-001, CERT-002, …).
               </p>
               <textarea
@@ -215,7 +212,7 @@
                 type="button"
                 id="bulk-certificate-button"
               >
-                Generate All Certificates
+                Generate All
               </button>
             </div>
             <div class="button-row">
@@ -224,7 +221,7 @@
                 type="button"
                 id="certificateGenerate"
               >
-                ✣ &nbsp;Generate certificate</button
+                ✣ &nbsp;Generate</button
               ><button
                 class="button soft"
                 type="button"
@@ -397,8 +394,8 @@
           </div>
           <div id="certificate-batch-toolbar" class="batch-toolbar is-hidden">
             <strong
-              ><span id="certificate-batch-count">0</span> certificates in
-              batch</strong
+              ><span id="certificate-batch-count">0</span>
+              <span id="certificate-batch-label">certificates in batch</span></strong
             >
             <button
               class="button"
@@ -412,7 +409,7 @@
               type="button"
               id="downloadCertificateBatchButton"
             >
-              ⇩ Download batch
+              ⇩ Save as PDF
             </button>
           </div>
           <div id="certificate-bulk-output" class="bulk-output is-hidden"></div>
@@ -464,6 +461,14 @@
         $(outputId).classList.remove("is-hidden");
       };
       const idBatch = [];
+      // The single-preview Print / Save as PDF buttons give way to a batch toolbar.
+      const updatePreviewActions = () => {
+        const isIdMode = $("#workspace").classList.contains("id-mode");
+        $("#preview-actions").classList.toggle(
+          "is-hidden",
+          isIdMode ? idBatch.length > 0 : certificateBatch.length > 0,
+        );
+      };
       const renderIdBatch = () => {
         $("#id-bulk-output").innerHTML = idBatch.join("");
         $("#id-batch-count").textContent = idBatch.length;
@@ -479,10 +484,7 @@
           $("#id-bulk-output").classList.add("is-hidden");
           $("#preview-stage").classList.remove("is-hidden");
         }
-        $("#preview-actions").classList.toggle(
-          "is-hidden",
-          idBatch.length > 0 || !$("#workspace").classList.contains("id-mode"),
-        );
+        updatePreviewActions();
       };
       const resetAssetPreviews = () => {
         $("#employee-photo-preview").src = "";
@@ -682,12 +684,18 @@
         return `${prefix}${next}${suffix}`;
       };
       const renderBulkCertificates = () => {
-        const names = $("#certificate-bulk-data")
+        // The recipient typed in the form comes first; skip repeats of it.
+        const formName = $("#certificateName").value.trim();
+        const pastedNames = $("#certificate-bulk-data")
           .value.split("\n")
           .map((line) => line.trim())
-          .filter(Boolean);
+          .filter(
+            (name) =>
+              name && name.toLowerCase() !== formName.toLowerCase(),
+          );
+        const names = formName ? [formName, ...pastedNames] : pastedNames;
         if (!names.length) {
-          window.alert("Paste at least one recipient name, one per line.");
+          window.alert("Enter a recipient name or paste names, one per line.");
           return;
         }
         const startNumber = $("#certificateNumber").value.trim();
@@ -721,11 +729,21 @@
       const renderCertificateBatch = () => {
         $("#certificate-bulk-output").innerHTML = certificateBatch.join("");
         $("#certificate-batch-count").textContent = certificateBatch.length;
+        $("#certificate-batch-label").textContent =
+          certificateBatch.length === 1
+            ? "certificate in batch"
+            : "certificates in batch";
         $("#certificate-batch-toolbar").classList.toggle(
           "is-hidden",
           certificateBatch.length === 0,
         );
-        showBulkOutput("#certificate-bulk-output", ["#certificate-preview"]);
+        updatePreviewActions();
+        if (certificateBatch.length) {
+          showBulkOutput("#certificate-bulk-output", ["#certificate-preview"]);
+        } else {
+          $("#certificate-bulk-output").classList.add("is-hidden");
+          $("#certificate-preview").classList.remove("is-hidden");
+        }
       };
       const saveCurrentCertificate = () => {
         const certificate = $(
@@ -759,17 +777,28 @@
         );
         $("#id-form").classList.toggle("is-hidden", isCertificate);
         $("#certificate-form").classList.toggle("is-hidden", !isCertificate);
-        $("#preview-stage").classList.toggle("is-hidden", isCertificate);
-        $("#certificate-preview").classList.toggle("is-hidden", !isCertificate);
-        $("#id-bulk-output").classList.toggle(
-          "is-hidden",
-          isCertificate || !$("#id-bulk-output").innerHTML,
-        );
-        $("#id-batch-toolbar").classList.toggle("is-hidden", isCertificate);
-        $("#preview-actions").classList.toggle(
+        // Each generator's preview, batch and toolbar only show in its own tab.
+        $("#preview-stage").classList.toggle(
           "is-hidden",
           isCertificate || idBatch.length > 0,
         );
+        $("#certificate-preview").classList.toggle(
+          "is-hidden",
+          !isCertificate || certificateBatch.length > 0,
+        );
+        $("#id-bulk-output").classList.toggle(
+          "is-hidden",
+          isCertificate || !idBatch.length,
+        );
+        $("#id-batch-toolbar").classList.toggle(
+          "is-hidden",
+          isCertificate || !idBatch.length,
+        );
+        $("#certificate-batch-toolbar").classList.toggle(
+          "is-hidden",
+          !isCertificate || !certificateBatch.length,
+        );
+        updatePreviewActions();
         $("#certificate-bulk-output").classList.toggle(
           "is-hidden",
           !isCertificate || !$("#certificate-bulk-output").innerHTML,
@@ -825,7 +854,6 @@
       const createEmployeeRow = () => {
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><input class="generate-checkbox" type="checkbox" data-generate-select checked aria-label="Select employee for ID generation"></td>
           <td><img class="employee-thumb is-hidden" alt="Employee photo preview"><input type="file" accept="image/*" data-asset="photo" aria-label="Employee photo"></td>
           <td><input data-field="employeeName" placeholder="Employee name" aria-label="Employee name"></td>
           <td><select data-field="jobTitle" aria-label="Job title"><option value="" selected>Select role</option>${jobTitles.map((title) => `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`).join("")}</select></td>
@@ -1005,7 +1033,13 @@
           updateActiveTextStyle({ align: button.dataset.formatAlign }),
         ),
       );
-      $("#printPreviewButton").addEventListener("click", printPreviewWindow);
+      $("#printPreviewButton").addEventListener("click", () => {
+        if ($("#workspace").classList.contains("id-mode")) {
+          printPreviewWindow();
+        } else {
+          window.print();
+        }
+      });
       $("#downloadPreviewButton").addEventListener("click", exportCurrentPreviewToPdf);
       $("#printBatchButton").addEventListener("click", printPreviewWindow);
       $("#downloadBatchButton").addEventListener("click", exportCurrentPreviewToPdf);
@@ -1020,16 +1054,9 @@
       $("#printCertificateBatchButton").addEventListener("click", () =>
         window.print(),
       );
-      $("#downloadCertificateBatchButton").addEventListener("click", () => {
-        const batchHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Certificate batch</title><link rel="stylesheet" href="style.css"></head><body><main class="bulk-output">${certificateBatch.join("")}</main></body></html>`;
-        const link = document.createElement("a");
-        link.download = "certificate-batch.html";
-        link.href = URL.createObjectURL(
-          new Blob([batchHtml], { type: "text/html" }),
-        );
-        link.click();
-        URL.revokeObjectURL(link.href);
-      });
+      $("#downloadCertificateBatchButton").addEventListener("click", () =>
+        saveCertificatesAsPdf(),
+      );
       $("#id-bulk-output").addEventListener("click", (event) => {
         const button = event.target.closest(".remove-batch-item");
         if (!button) return;
@@ -1073,13 +1100,10 @@
           );
         }),
       );
-      const generateIds = (selectedOnly) => {
-        const candidateRows = [...$("#employee-rows").rows].filter(
-          (row) =>
-            !selectedOnly || row.querySelector("[data-generate-select]").checked,
-        );
-        const rows = candidateRows.filter((row) =>
-          [...row.querySelectorAll("input:not([type=checkbox]), select")].some(
+      const generateIds = () => {
+        // Rows with only the prefilled defaults count as empty and are skipped.
+        const rows = [...$("#employee-rows").rows].filter((row) =>
+          [...row.querySelectorAll("input, select")].some(
             (input) =>
               input.dataset.field === "companyAddress" ||
               input.dataset.field === "AuthorizedPersonName"
@@ -1089,16 +1113,8 @@
                   : input.value.trim(),
           ),
         );
-        if (selectedOnly && !candidateRows.length) {
-          window.alert("Select at least one employee to generate an ID.");
-          return;
-        }
         if (!rows.length) {
-          window.alert(
-            selectedOnly
-              ? "Enter employee details in a selected row before generating IDs."
-              : "Add employee details before generating IDs.",
-          );
+          window.alert("Add employee details before generating IDs.");
           return;
         }
         if (rows.some((row) => !row.querySelector('[data-field="employeeName"]').value.trim() || !row.querySelector('[data-field="employeeId"]').value.trim())) {
@@ -1162,79 +1178,85 @@
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       };
-      const exportTargetToPdf = async (targets, filename) => {
-        const exportTargets = Array.isArray(targets) ? targets : [targets];
-        if (!exportTargets.length || !exportTargets[0]) {
-          window.alert("The preview is not available.");
+      // One certificate per A4 landscape page, laid out like the printed version.
+      const exportCertificatesToPdf = async (certificates, filename) => {
+        if (!certificates.length) {
+          window.alert("There is no certificate to save yet.");
           return;
         }
         if (typeof html2canvas !== "function" || !window.jspdf?.jsPDF) {
           window.alert("The PDF tools could not load. Check your internet connection and try again.");
           return;
         }
-
+        const stage = document.createElement("div");
+        stage.className = "certificate-export-stage";
+        document.body.append(stage);
         try {
+          await document.fonts.ready;
           const { jsPDF } = window.jspdf;
           const pdf = new jsPDF({
             orientation: "landscape",
             unit: "mm",
             format: "a4",
+            compress: true,
           });
-
           const pageWidth = pdf.internal.pageSize.getWidth();
           const pageHeight = pdf.internal.pageSize.getHeight();
-          const cardWidth = 85.6;
-          const cardHeight = 53.98;
-          const gap = 8;
-          const cardsPerPage = 3;
-          const leftMargin = (pageWidth - (cardWidth * cardsPerPage + gap * (cardsPerPage - 1))) / 2;
-          const topMargin = 18;
-
-          for (let index = 0; index < exportTargets.length; index += 1) {
-            const pageIndex = Math.floor(index / cardsPerPage);
-            const pageOffset = index % cardsPerPage;
-            if (index > 0 && index % cardsPerPage === 0) {
-              pdf.addPage();
-            }
-
-            const source = exportTargets[index];
-            const canvas = await html2canvas(source, {
+          const margin = 8;
+          for (let index = 0; index < certificates.length; index += 1) {
+            if (index > 0) pdf.addPage();
+            const copy = certificates[index].cloneNode(true);
+            copy.classList.remove("has-background", "is-dragging");
+            copy.querySelectorAll(".remove-batch-item").forEach((button) => button.remove());
+            stage.replaceChildren(copy);
+            const canvas = await html2canvas(copy, {
               backgroundColor: "#ffffff",
-              scale: 2,
+              scale: 3,
               logging: false,
               useCORS: true,
-              scrollX: 0,
-              scrollY: 0,
-              windowWidth: source.scrollWidth || source.offsetWidth || source.clientWidth,
-              windowHeight: source.scrollHeight || source.offsetHeight || source.clientHeight,
-              onclone: (clonedDocument) => {
-                clonedDocument.querySelectorAll(".remove-batch-item").forEach((button) => button.remove());
-              },
             });
-
-            const scale = Math.min(cardWidth / canvas.width, cardHeight / canvas.height);
-            const drawWidth = canvas.width * scale;
-            const drawHeight = canvas.height * scale;
-            const x = leftMargin + pageOffset * (cardWidth + gap) + (cardWidth - drawWidth) / 2;
-            const y = topMargin + pageIndex * (cardHeight + 18) + (cardHeight - drawHeight) / 2;
-
+            const scale = Math.min(
+              (pageWidth - margin * 2) / canvas.width,
+              (pageHeight - margin * 2) / canvas.height,
+            );
+            const width = canvas.width * scale;
+            const height = canvas.height * scale;
             pdf.addImage(
-              canvas.toDataURL("image/png"),
-              "PNG",
-              x,
-              y,
-              drawWidth,
-              drawHeight,
+              canvas.toDataURL("image/jpeg", 0.92),
+              "JPEG",
+              (pageWidth - width) / 2,
+              (pageHeight - height) / 2,
+              width,
+              height,
               undefined,
               "FAST",
             );
+            canvas.width = 0;
+            canvas.height = 0;
           }
-
           downloadBlobAsPdf(pdf.output("blob"), filename);
         } catch (error) {
           console.error("PDF generation failed", error);
           window.alert(`The PDF could not be generated: ${error.message || error}`);
+        } finally {
+          stage.remove();
         }
+      };
+      const createCertificatePdfFilename = () => {
+        const name = $("#certificateName").value.trim();
+        const safeName = name
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/^_+|_+$/g, "");
+        return safeName ? `Certificate_${safeName}.pdf` : "Certificate.pdf";
+      };
+      const saveCertificatesAsPdf = () => {
+        if (certificateBatch.length) {
+          return exportCertificatesToPdf(
+            [...$("#certificate-bulk-output").querySelectorAll(".certificate-paper")],
+            "Certificates_Batch.pdf",
+          );
+        }
+        return exportCertificatesToPdf([certificatePaper], createCertificatePdfFilename());
       };
       const renderIdCardCanvas = async (source) => {
         await document.fonts.ready;
@@ -1396,11 +1418,8 @@
         $("#certificate-preview").before($("#id-print-output"));
       });
       async function exportCurrentPreviewToPdf() {
-        if (!$("#certificate-preview").classList.contains("is-hidden")) {
-          await exportTargetToPdf(
-            $("#certificate-preview .certificate-paper"),
-            "certificate.pdf",
-          );
+        if (!$("#workspace").classList.contains("id-mode")) {
+          await saveCertificatesAsPdf();
           return;
         }
         const pairs = getIdCardPairs();
@@ -1410,8 +1429,7 @@
           : createEmployeePdfFilename();
         await exportIdPairsToPdf(pairs, filename);
       }
-      $("#generateButton").addEventListener("click", () => generateIds(true));
-      $("#generateAllButton").addEventListener("click", () => generateIds(false));
+      $("#generateButton").addEventListener("click", generateIds);
       $("#certificatePrint").addEventListener("click", () => window.print());
       $("#certificateGenerate").addEventListener("click", () => {
         $("#certificate-preview").classList.remove("is-hidden");

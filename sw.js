@@ -1,9 +1,9 @@
 // Bump this when app files change so installed copies drop the old cache.
-const CACHE_NAME = "id-cert-generator-v4";
+const CACHE_NAME = "id-cert-generator-v7";
 const APP_FILES = [
   "./",
   "index.html",
-  "style.css?v=14",
+  "style.css?v=17",
   "manifest.webmanifest",
   "fmg logo.png",
   "backlogo.png",
