@@ -1069,6 +1069,11 @@ input[type="file"]::file-selector-button {
   flex-wrap: wrap;
   gap: 7px;
 }
+.button.is-busy {
+  cursor: progress;
+  opacity: 0.75;
+  transform: none;
+}
 .button.danger {
   border-color: #efcfca;
   color: #9a3d31;

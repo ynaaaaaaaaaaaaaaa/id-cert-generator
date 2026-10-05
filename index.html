@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#146443" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
-    <link rel="stylesheet" href="style.css?v=18" />
+    <link rel="stylesheet" href="style.css?v=19" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   </head>
@@ -1120,16 +1120,39 @@
           updateActiveTextStyle({ align: button.dataset.formatAlign }),
         ),
       );
-      $("#printPreviewButton").addEventListener("click", () => {
-        if ($("#workspace").classList.contains("id-mode")) {
-          printPreviewWindow();
-        } else {
-          window.print();
+      // Print / PDF can take a while for big batches: show progress on the
+      // clicked button and ignore repeat clicks until it finishes.
+      let reportProgress = () => {};
+      const runWithBusyButton = (button, task) => async () => {
+        if (button.disabled) return;
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.classList.add("is-busy");
+        button.textContent = "Preparing…";
+        reportProgress = (done, total) => {
+          button.textContent = `Preparing ${Math.min(done + 1, total)} of ${total}…`;
+        };
+        try {
+          await task();
+        } finally {
+          reportProgress = () => {};
+          button.disabled = false;
+          button.classList.remove("is-busy");
+          button.innerHTML = original;
         }
-      });
-      $("#downloadPreviewButton").addEventListener("click", exportCurrentPreviewToPdf);
-      $("#printBatchButton").addEventListener("click", printPreviewWindow);
-      $("#downloadBatchButton").addEventListener("click", exportCurrentPreviewToPdf);
+      };
+      const printCurrentPreview = () =>
+        $("#workspace").classList.contains("id-mode")
+          ? printPreviewWindow()
+          : window.print();
+      [
+        ["#printPreviewButton", printCurrentPreview],
+        ["#downloadPreviewButton", exportCurrentPreviewToPdf],
+        ["#printBatchButton", printPreviewWindow],
+        ["#downloadBatchButton", exportCurrentPreviewToPdf],
+      ].forEach(([selector, task]) =>
+        $(selector).addEventListener("click", runWithBusyButton($(selector), task)),
+      );
       $("#saveCertificateBatchButton").addEventListener(
         "click",
         saveCurrentCertificate,
@@ -1141,8 +1164,11 @@
       $("#printCertificateBatchButton").addEventListener("click", () =>
         window.print(),
       );
-      $("#downloadCertificateBatchButton").addEventListener("click", () =>
-        saveCertificatesAsPdf(),
+      $("#downloadCertificateBatchButton").addEventListener(
+        "click",
+        runWithBusyButton($("#downloadCertificateBatchButton"), () =>
+          saveCertificatesAsPdf(),
+        ),
       );
       $("#id-bulk-output").addEventListener("click", (event) => {
         const button = event.target.closest(".remove-batch-item");
@@ -1329,6 +1355,7 @@
           const margin = 8;
           for (let index = 0; index < certificates.length; index += 1) {
             if (index > 0) pdf.addPage();
+            reportProgress(index, certificates.length);
             const copy = certificates[index].cloneNode(true);
             copy.classList.remove("has-background", "is-dragging");
             copy.querySelectorAll(".remove-batch-item").forEach((button) => button.remove());
@@ -1384,9 +1411,11 @@
       };
       const renderIdCardCanvas = async (source) => {
         await document.fonts.ready;
+        // Scale 3 is still over 400 dpi on the printed card; white backing lets
+        // the image be stored as JPEG, which is much faster and smaller than PNG.
         return html2canvas(source, {
-          backgroundColor: null,
-          scale: 4,
+          backgroundColor: "#ffffff",
+          scale: 3,
           logging: false,
           useCORS: true,
           allowTaint: false,
@@ -1435,6 +1464,7 @@
           });
           const pageWidth = pdf.internal.pageSize.getWidth();
           const pages = groupIdPairsIntoPages(pairs);
+          let cardsDone = 0;
           for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
             if (pageIndex > 0) pdf.addPage();
             const page = pages[pageIndex];
@@ -1456,6 +1486,7 @@
             for (let row = 0; row < page.pairs.length; row += 1) {
               const y = top + row * (cardHeight + rowGap);
               for (let side = 0; side < 2; side += 1) {
+                reportProgress(cardsDone++, pairs.length * 2);
                 const canvas = await renderIdCardCanvas(page.pairs[row][side]);
                 const frame = getFittedCardFrame(
                   canvas.width,
@@ -1465,8 +1496,8 @@
                 );
                 const slotX = sheetLeft + left + side * (cardWidth + pairGap);
                 pdf.addImage(
-                  canvas.toDataURL("image/png"),
-                  "PNG",
+                  canvas.toDataURL("image/jpeg", 0.92),
+                  "JPEG",
                   slotX + (cardWidth - frame.width) / 2,
                   y + (cardHeight - frame.height) / 2,
                   frame.width,
@@ -1505,6 +1536,7 @@
         const output = $("#id-print-output");
         output.replaceChildren();
         try {
+          let cardsDone = 0;
           for (const { isSite, pairs: pagePairs } of groupIdPairsIntoPages(pairs)) {
             const page = document.createElement("section");
             page.className = isSite ? "id-print-page is-site" : "id-print-page";
@@ -1520,6 +1552,7 @@
                 image.className = "id-print-card-image";
                 image.alt = "";
                 image.style.objectFit = "contain";
+                reportProgress(cardsDone++, pairs.length * 2);
                 const canvas = await renderIdCardCanvas(card);
                 const frame = getFittedCardFrame(
                   canvas.width,
@@ -1529,7 +1562,7 @@
                 );
                 image.style.width = `${frame.width}mm`;
                 image.style.height = `${frame.height}mm`;
-                image.src = canvas.toDataURL("image/png");
+                image.src = canvas.toDataURL("image/jpeg", 0.95);
                 canvas.width = 0;
                 canvas.height = 0;
                 wrapper.append(image);
