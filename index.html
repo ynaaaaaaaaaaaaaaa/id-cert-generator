@@ -7,13 +7,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Great+Vibes&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Great+Vibes&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#146443" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
-    <link rel="stylesheet" href="style.css?v=17" />
+    <link rel="stylesheet" href="style.css?v=18" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   </head>
@@ -50,6 +50,24 @@
             </div>
           </div>
           <form id="id-form" class="form-content">
+            <div class="id-type-toggle" role="group" aria-label="ID type">
+              <span>ID type</span>
+              <button
+                class="id-type-option"
+                type="button"
+                data-id-type="office"
+                aria-pressed="true"
+              >
+                Office ID</button
+              ><button
+                class="id-type-option"
+                type="button"
+                data-id-type="site"
+                aria-pressed="false"
+              >
+                Site ID
+              </button>
+            </div>
             <div class="employee-table-wrap" role="region" aria-label="Employee ID details table" tabindex="0">
               <table class="employee-table">
                 <thead>
@@ -300,6 +318,67 @@
               </div>
               <small>Authorized Person</small>
             </div>
+            <div
+              class="id-card site-card site-front-card is-hidden"
+              id="site-front-card"
+            >
+              <div class="site-photo">
+                <img data-preview-image="photo" alt="Employee photo" />
+              </div>
+              <div class="site-person">
+                <div
+                  class="site-name"
+                  data-preview="employeeName"
+                  data-placeholder="EMPLOYEE NAME"
+                ></div>
+                <div
+                  class="site-job"
+                  data-preview="jobTitle"
+                  data-placeholder=""
+                ></div>
+              </div>
+              <img
+                class="site-employee-signature"
+                data-preview-image="employeeSignature"
+                alt="Employee signature"
+              />
+              <div
+                class="site-id-number"
+                data-preview="employeeId"
+                data-placeholder=""
+              ></div>
+            </div>
+            <div
+              class="id-card site-card site-back-card is-hidden"
+              id="site-back-card"
+            >
+              <div
+                class="site-emergency site-emergency-name"
+                data-preview="emergencyPerson"
+                data-placeholder=""
+              ></div>
+              <div
+                class="site-emergency site-emergency-address"
+                data-preview="returnAddress"
+                data-placeholder=""
+              ></div>
+              <div
+                class="site-emergency site-emergency-contact"
+                data-preview="emergencyNumber"
+                data-placeholder=""
+              ></div>
+              <img
+                class="site-authorized-signature"
+                data-preview-image="authorizedSignature"
+                alt="Authorized person signature"
+              />
+              <div
+                class="site-authorized-name"
+                data-preview="AuthorizedPersonName"
+                data-placeholder=""
+              ></div>
+              <div class="site-authorized-role">General Manager</div>
+            </div>
           </div>
           <div class="preview-actions" id="preview-actions">
             <button class="button soft" type="button" id="printPreviewButton">
@@ -431,7 +510,15 @@
         if (!row) return;
         $$("[data-preview]").forEach((element) => {
           const value = row.querySelector(`[data-field="${element.dataset.preview}"]`)?.value.trim();
-          element.textContent = value || (element.classList.contains("employee-name") ? "EMPLOYEE NAME" : "—");
+          element.textContent =
+            value ||
+            (element.dataset.placeholder ??
+              (element.classList.contains("employee-name") ? "EMPLOYEE NAME" : "—"));
+        });
+        $$("[data-preview-image]").forEach((image) => {
+          const url = row.dataset[`${image.dataset.previewImage}Url`] || "";
+          image.src = url;
+          image.classList.toggle("has-image", Boolean(url));
         });
         const photo = $("#employee-photo-preview");
         photo.src = row.dataset.photoUrl || "";
@@ -1100,6 +1187,23 @@
           );
         }),
       );
+      let idType = "office";
+      const setIdType = (type) => {
+        idType = type;
+        const isSite = type === "site";
+        ["#front-card", "#back-card"].forEach((selector) =>
+          $(selector).classList.toggle("is-hidden", isSite),
+        );
+        ["#site-front-card", "#site-back-card"].forEach((selector) =>
+          $(selector).classList.toggle("is-hidden", !isSite),
+        );
+        $$(".id-type-option").forEach((button) =>
+          button.setAttribute("aria-pressed", String(button.dataset.idType === type)),
+        );
+      };
+      $$(".id-type-option").forEach((button) =>
+        button.addEventListener("click", () => setIdType(button.dataset.idType)),
+      );
       const generateIds = () => {
         // Rows with only the prefilled defaults count as empty and are skipped.
         const rows = [...$("#employee-rows").rows].filter((row) =>
@@ -1121,11 +1225,15 @@
           window.alert("Enter an employee name and ID number for every filled row.");
           return;
         }
+        const cardSelectors =
+          idType === "site"
+            ? ["#site-front-card", "#site-back-card"]
+            : ["#front-card", "#back-card"];
         rows.forEach((row) => {
           updatePreview(row);
           const pair = document.createElement("div");
           pair.className = "bulk-id-pair";
-          ["#front-card", "#back-card"].forEach((selector) => {
+          cardSelectors.forEach((selector) => {
             const card = $(selector).cloneNode(true);
             card.classList.add("bulk-id-card");
             pair.append(card);
@@ -1162,8 +1270,24 @@
         if (batchPairs.length) {
           return batchPairs.map((pair) => [...pair.querySelectorAll(":scope > .id-card")]);
         }
-        const previewCards = [...$("#preview-stage").querySelectorAll(":scope > .id-card")];
+        const previewCards = [
+          ...$("#preview-stage").querySelectorAll(":scope > .id-card:not(.is-hidden)"),
+        ];
         return previewCards.length ? [previewCards] : [];
+      };
+      // Pages hold one ID type each: 3 office pairs (portrait) or 4 site pairs (landscape).
+      const groupIdPairsIntoPages = (pairs) => {
+        const pages = [];
+        pairs.forEach((pair) => {
+          const isSite = pair[0].classList.contains("site-card");
+          const page = pages[pages.length - 1];
+          if (page && page.isSite === isSite && page.pairs.length < (isSite ? 4 : 3)) {
+            page.pairs.push(pair);
+          } else {
+            pages.push({ isSite, pairs: [pair] });
+          }
+        });
+        return pages;
       };
       const downloadBlobAsPdf = (blob, filename) => {
         const url = URL.createObjectURL(blob);
@@ -1270,12 +1394,16 @@
           scrollY: 0,
         });
       };
-      const getIdSheetMetrics = () => {
+      const getIdSheetMetrics = (isSite = false) => {
         const millimeters = (name) =>
           parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+        const shortSide = millimeters("--id-card-width");
+        const longSide = millimeters("--id-card-height");
         return {
-          cardWidth: millimeters("--id-card-width"),
-          cardHeight: millimeters("--id-card-height"),
+          // Site IDs are the same card turned sideways.
+          cardWidth: isSite ? longSide : shortSide,
+          cardHeight: isSite ? shortSide : longSide,
+          rowsPerPage: isSite ? 4 : 3,
           pairGap: millimeters("--id-pair-gap"),
           rowGap: millimeters("--id-row-gap"),
           sheetWidth: millimeters("--id-sheet-width"),
@@ -1305,49 +1433,60 @@
             compress: true,
             precision: 16,
           });
-          const { cardWidth, cardHeight, pairGap, rowGap, sheetWidth, sheetHeight } =
-            getIdSheetMetrics();
           const pageWidth = pdf.internal.pageSize.getWidth();
-          const pairWidth = cardWidth * 2 + pairGap;
-          const left = (sheetWidth - pairWidth) / 2;
-          const top = (sheetHeight - cardHeight * 3 - rowGap * 2) / 2;
-          const sheetLeft = (pageWidth - sheetWidth) / 2;
+          const pages = groupIdPairsIntoPages(pairs);
+          for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+            if (pageIndex > 0) pdf.addPage();
+            const page = pages[pageIndex];
+            const {
+              cardWidth,
+              cardHeight,
+              rowsPerPage,
+              pairGap,
+              rowGap,
+              sheetWidth,
+              sheetHeight,
+            } = getIdSheetMetrics(page.isSite);
+            const pairWidth = cardWidth * 2 + pairGap;
+            const left = (sheetWidth - pairWidth) / 2;
+            const top =
+              (sheetHeight - cardHeight * rowsPerPage - rowGap * (rowsPerPage - 1)) / 2;
+            const sheetLeft = (pageWidth - sheetWidth) / 2;
 
-          for (let pairIndex = 0; pairIndex < pairs.length; pairIndex += 1) {
-            if (pairIndex > 0 && pairIndex % 3 === 0) pdf.addPage();
-            const row = pairIndex % 3;
-            const y = top + row * (cardHeight + rowGap);
-            for (let side = 0; side < 2; side += 1) {
-              const canvas = await renderIdCardCanvas(pairs[pairIndex][side]);
-              const frame = getFittedCardFrame(
-                canvas.width,
-                canvas.height,
-                cardWidth,
-                cardHeight,
-              );
-              const slotX = sheetLeft + left + side * (cardWidth + pairGap);
-              pdf.addImage(
-                canvas.toDataURL("image/png"),
-                "PNG",
-                slotX + (cardWidth - frame.width) / 2,
-                y + (cardHeight - frame.height) / 2,
-                frame.width,
-                frame.height,
-                undefined,
-                "FAST",
-              );
-              canvas.width = 0;
-              canvas.height = 0;
-            }
+            for (let row = 0; row < page.pairs.length; row += 1) {
+              const y = top + row * (cardHeight + rowGap);
+              for (let side = 0; side < 2; side += 1) {
+                const canvas = await renderIdCardCanvas(page.pairs[row][side]);
+                const frame = getFittedCardFrame(
+                  canvas.width,
+                  canvas.height,
+                  cardWidth,
+                  cardHeight,
+                );
+                const slotX = sheetLeft + left + side * (cardWidth + pairGap);
+                pdf.addImage(
+                  canvas.toDataURL("image/png"),
+                  "PNG",
+                  slotX + (cardWidth - frame.width) / 2,
+                  y + (cardHeight - frame.height) / 2,
+                  frame.width,
+                  frame.height,
+                  undefined,
+                  "FAST",
+                );
+                canvas.width = 0;
+                canvas.height = 0;
+              }
 
-            pdf.setDrawColor(115, 130, 125);
-            pdf.setLineWidth(0.15);
-            pdf.setLineDashPattern([0.8, 0.8], 0);
-            pdf.line(sheetLeft + left + cardWidth + pairGap / 2, y, sheetLeft + left + cardWidth + pairGap / 2, y + cardHeight);
-            if (row < 2 && pairIndex + 1 < pairs.length) {
-              pdf.line(sheetLeft + left, y + cardHeight + rowGap / 2, sheetLeft + left + pairWidth, y + cardHeight + rowGap / 2);
+              pdf.setDrawColor(115, 130, 125);
+              pdf.setLineWidth(0.15);
+              pdf.setLineDashPattern([0.8, 0.8], 0);
+              pdf.line(sheetLeft + left + cardWidth + pairGap / 2, y, sheetLeft + left + cardWidth + pairGap / 2, y + cardHeight);
+              if (row < page.pairs.length - 1) {
+                pdf.line(sheetLeft + left, y + cardHeight + rowGap / 2, sheetLeft + left + pairWidth, y + cardHeight + rowGap / 2);
+              }
+              pdf.setLineDashPattern([], 0);
             }
-            pdf.setLineDashPattern([], 0);
           }
 
           downloadBlobAsPdf(pdf.output("blob"), filename);
@@ -1366,39 +1505,38 @@
         const output = $("#id-print-output");
         output.replaceChildren();
         try {
-          for (let index = 0; index < pairs.length; index += 1) {
-            if (index % 3 === 0) {
-              const page = document.createElement("section");
-              page.className = "id-print-page";
-              output.append(page);
+          for (const { isSite, pairs: pagePairs } of groupIdPairsIntoPages(pairs)) {
+            const page = document.createElement("section");
+            page.className = isSite ? "id-print-page is-site" : "id-print-page";
+            output.append(page);
+            const { cardWidth, cardHeight } = getIdSheetMetrics(isSite);
+            for (const cards of pagePairs) {
+              const pair = document.createElement("div");
+              pair.className = "id-print-pair";
+              for (const card of cards) {
+                const wrapper = document.createElement("div");
+                wrapper.className = "id-print-card-wrap";
+                const image = document.createElement("img");
+                image.className = "id-print-card-image";
+                image.alt = "";
+                image.style.objectFit = "contain";
+                const canvas = await renderIdCardCanvas(card);
+                const frame = getFittedCardFrame(
+                  canvas.width,
+                  canvas.height,
+                  cardWidth,
+                  cardHeight,
+                );
+                image.style.width = `${frame.width}mm`;
+                image.style.height = `${frame.height}mm`;
+                image.src = canvas.toDataURL("image/png");
+                canvas.width = 0;
+                canvas.height = 0;
+                wrapper.append(image);
+                pair.append(wrapper);
+              }
+              page.append(pair);
             }
-            const page = output.lastElementChild;
-            const pair = document.createElement("div");
-            pair.className = "id-print-pair";
-            const { cardWidth, cardHeight } = getIdSheetMetrics();
-            for (const card of pairs[index]) {
-              const wrapper = document.createElement("div");
-              wrapper.className = "id-print-card-wrap";
-              const image = document.createElement("img");
-              image.className = "id-print-card-image";
-              image.alt = "";
-              image.style.objectFit = "contain";
-              const canvas = await renderIdCardCanvas(card);
-              const frame = getFittedCardFrame(
-                canvas.width,
-                canvas.height,
-                cardWidth,
-                cardHeight,
-              );
-              image.style.width = `${frame.width}mm`;
-              image.style.height = `${frame.height}mm`;
-              image.src = canvas.toDataURL("image/png");
-              canvas.width = 0;
-              canvas.height = 0;
-              wrapper.append(image);
-              pair.append(wrapper);
-            }
-            page.append(pair);
           }
           await Promise.all(
             [...output.querySelectorAll("img")].map((image) => image.decode()),

@@ -485,6 +485,175 @@ input[type="file"]::file-selector-button {
 .preview-heading {
   margin-bottom: 10px;
 }
+/* Office / Site ID switch above the employee table. */
+.id-type-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 12px;
+  border: 1px solid #c5eddc;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+.id-type-toggle > span {
+  padding: 0 14px;
+  color: #325d50;
+  font-size: 13px;
+  font-weight: 700;
+}
+.id-type-option {
+  height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-left: 1px solid #c5eddc;
+  color: #176d4d;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.id-type-option[aria-pressed="true"] {
+  color: #fff;
+  background: var(--green);
+}
+/*
+ * Site ID: landscape card drawn over the cleaned template images. Positions are
+ * percentages of the 1011x639 template so they scale with the card.
+ */
+.id-card.site-card {
+  width: 486px;
+  height: 307px;
+  border: 1px solid rgba(21, 92, 69, 0.18);
+  background-color: #fff;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  text-align: left;
+}
+.id-card.site-front-card {
+  background-image: url("site-id-front.png");
+  font-family: "Montserrat", sans-serif;
+}
+.id-card.site-back-card {
+  background-image: url("site-id-back.png");
+  color: #231f55;
+  font-family: "Poppins", sans-serif;
+}
+#preview-stage > .site-card,
+.bulk-id-card.site-card {
+  flex: 0 0 486px;
+}
+.bulk-id-pair:has(.site-card) {
+  grid-column: 1 / -1;
+  max-width: none;
+}
+.site-card img:not(.has-image) {
+  display: none;
+}
+.site-photo {
+  position: absolute;
+  top: 30.67%;
+  left: 9.99%;
+  width: 31.75%;
+  height: 49.45%;
+  overflow: hidden;
+}
+.site-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.site-person {
+  position: absolute;
+  top: 30.6%;
+  left: 47.5%;
+  width: 45%;
+  text-align: center;
+}
+.site-name {
+  color: #083907;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.site-job {
+  margin-top: 4px;
+  color: #023f2b;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.site-employee-signature {
+  position: absolute;
+  bottom: 40.8%;
+  left: 56%;
+  width: 31%;
+  height: 14%;
+  object-fit: contain;
+}
+.site-id-number {
+  position: absolute;
+  top: 82.7%;
+  left: 26.5%;
+  color: #023f2b;
+  font-size: 11.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.site-emergency {
+  position: absolute;
+  left: 34.4%;
+  width: 56%;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+}
+.site-emergency-name {
+  top: 31.6%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.site-emergency-address {
+  top: 39.4%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.site-emergency-contact {
+  top: 51.3%;
+  white-space: nowrap;
+}
+.site-authorized-signature {
+  position: absolute;
+  top: 74.5%;
+  left: 39%;
+  width: 28%;
+  height: 21%;
+  object-fit: contain;
+}
+.site-authorized-name {
+  position: absolute;
+  top: 83%;
+  left: 31%;
+  width: 44%;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+.site-authorized-role {
+  position: absolute;
+  top: 89.6%;
+  left: 31%;
+  width: 44%;
+  font-size: 8.5px;
+  line-height: 1.2;
+  text-align: center;
+}
 .live-pill {
   padding: 3px 7px;
   border-radius: 8px;
@@ -1142,6 +1311,12 @@ input[type="file"]::file-selector-button {
     padding: 0;
     break-after: page;
     page-break-after: always;
+  }
+  /* Site ID pages: landscape cards, four pairs per sheet. */
+  .id-print-page.is-site {
+    --id-card-width: 85.6mm;
+    --id-card-height: 53.98mm;
+    grid-template-rows: repeat(4, var(--id-card-height));
   }
   .id-print-page:last-child {
     break-after: auto;
